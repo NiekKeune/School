@@ -57,27 +57,64 @@ namespace School
         // When the user presses a key, determine whether to add a new student to a class, remove a student from a class, or modify the details of a student
         private void studentsList_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.Key)
+            switch (e.Key)                                                          
             {
-                case Key.Enter:
-                    var Student = studentsList.SelectedItem as Student;             //tracks a single student
+                case Key.Enter:                                                                  //when enter is pressed, it goes to the form to edit a students info
+                    var editStudent = studentsList.SelectedItem as Student;                      //tracks the selected student
                     StudentForm sf = new StudentForm();
                     sf.Title = "Edit Student Details";
-                    sf.firstName.Text = Student.FirstName;                          //converts the values from a student to string in the textboxes
-                    sf.lastName.Text = Student.LastName;                            //
-                    sf.dateOfBirth.Text = Student.DateOfBirth.ToString("d");        //converts the datetime of their birthdate to string
+                    sf.firstName.Text = editStudent.FirstName;                                   //converts the values from a student to string in the textboxes
+                    sf.lastName.Text = editStudent.LastName;                                     //
+                    sf.dateOfBirth.Text = editStudent.DateOfBirth.ToString("d");                 //converts the datetime of their birthdate to string
                     
                     sf.ShowDialog();
                     
-                    bool check = sf.DialogResult ?? false;                          //sf. gets the method for the new form and not the general method, ?? makes sure that the boolean can't return null.
+                    bool checkEdit = sf.DialogResult ?? false;                                   //sf. gets the method for the new form and not the general method, ?? makes sure that the boolean can't return null.
 
-                    if (check)
+                    if (checkEdit)
                     {
-                        Student.FirstName = sf.firstName.Text;                      //saves the changed values in the textbox to the student
-                        Student.LastName = sf.lastName.Text;
-                        Student.DateOfBirth = DateTime.Parse(sf.dateOfBirth.Text);  //converts the string of birthdate back to datetime
+                        editStudent.FirstName = sf.firstName.Text;                               //saves the changed values in the textbox to the student
+                        editStudent.LastName = sf.lastName.Text;                                 //
+                        editStudent.DateOfBirth = DateTime.Parse(sf.dateOfBirth.Text);           //converts the string of birthdate back to datetime
+
+                        saveChanges.IsEnabled = true;
+
+                        break;
+                    }
+                    break;
+
+                case Key.Insert:                                                                 //when insert is pressed, it goes to the form to add a student. 
+                    StudentForm addStudent = new StudentForm();                                  //however, you'll have to select a student first before you can press insert, whilst it'll be better if you can press insert before that
+                    addStudent.Title = "New Student for Class" + teacher.Class;
+
+                    addStudent.ShowDialog();
+
+                    bool checkAdd = addStudent.DialogResult ?? false;                            //sf. gets the method for the new form and not the general method, ?? makes sure that the boolean can't return null.
+
+                    if (checkAdd)
+                    {
+                        Student addedStudent = new Student();
+                        addedStudent.FirstName = addStudent.firstName.Text;                      //saves the inserted values in the textbox to the new student
+                        addedStudent.LastName = addStudent.lastName.Text;                        //
+                        addedStudent.DateOfBirth = DateTime.Parse(addStudent.dateOfBirth.Text);  //converts the string of birthdate back to datetime
+
+                        this.teacher.Students.Add(addedStudent);
+                        
                         saveChanges.IsEnabled = true;
                         break;
+                    }
+                    break;
+
+                case Key.Delete:                                                                 //when delete is pressed, it goes to the messagebox to delete a student
+                    var delStudent = studentsList.SelectedItem as Student;
+                    var Notification = MessageBox.Show("Remove " + delStudent.FirstName + " " +  //creates the messagebox, sets the standard button to no incase the user presses enter too fast so he won't accidentally delete a student
+                        delStudent.LastName + "?", "Confirm", MessageBoxButton.YesNo,
+                        MessageBoxImage.Question, MessageBoxResult.No);
+                    if (Notification.Equals(MessageBoxResult.Yes))
+                    {
+                        this.teacher.Students.Remove(delStudent);
+
+                        saveChanges.IsEnabled = true;
                     }
                     break;
             }
@@ -105,10 +142,25 @@ namespace School
         public object Convert(object value, Type targetType, object parameter,
                               System.Globalization.CultureInfo culture)
         {
-            return "";
-        }
+            if (value == null)
+            {
+                return "";
+            }
 
-        #region Predefined code
+            else
+            {
+                DateTime studentDate = (DateTime)value;                                          //not sure how this works
+
+                TimeSpan studentYearDifference = DateTime.Now.Subtract(studentDate);
+
+                double studentAge = (studentYearDifference.Days / 365.25);
+
+                int studentAge2 = (int)studentAge;
+                string studentAge3 = (studentAge2.ToString());
+                return studentAge3;
+            }
+            #region Predefined code
+        }
 
         public object ConvertBack(object value, Type targetType, object parameter,
                                   System.Globalization.CultureInfo culture)
@@ -117,5 +169,6 @@ namespace School
         }
 
         #endregion
+
     }
 }
