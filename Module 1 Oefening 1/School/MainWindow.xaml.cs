@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Data;
+using System.Data.Objects;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -145,7 +147,30 @@ namespace School
         // Save changes back to the database and make them permanent
         private void saveChanges_Click(object sender, RoutedEventArgs e)
         {
-            
+            try
+            {
+                schoolContext.SaveChanges();
+
+                saveChanges.IsEnabled = false;
+            }
+            catch(OptimisticConcurrencyException)
+            {
+                // If the user has changed the same students earlier, then overwrite their changes with the new data.
+                schoolContext.Refresh(RefreshMode.ClientWins, schoolContext.Students);
+                schoolContext.SaveChanges();
+            }
+            catch(UpdateException uEx)
+            {
+                // If some sort of database exception has occured, then display the reason for the exception and rollback.
+                MessageBox.Show(uEx.InnerException.Message, "Error saving changes");
+                this.schoolContext.Refresh(RefreshMode.StoreWins, schoolContext.Students);
+            }
+            catch(Exception ex)
+            {
+                // If some other exception occurs, report it to the user.
+                MessageBox.Show(ex.Message, "Error saving changes");
+                this.schoolContext.Refresh(RefreshMode.ClientWins, schoolContext.Students);
+            }
         }
 
         #endregion
